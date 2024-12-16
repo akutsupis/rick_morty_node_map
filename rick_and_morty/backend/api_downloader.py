@@ -42,8 +42,8 @@ def save_data_as_json(data, filename):
         filename (str): The name of the JSON file.
     """
     try:
-        os.makedirs("data", exist_ok=True)  # Ensure the data directory exists
-        filepath = os.path.join("data", filename)
+        os.makedirs("../../data", exist_ok=True)  # Ensure the data directory exists
+        filepath = os.path.join("../../data", filename)
         with open(filepath, "w") as file:
             json.dump(data, file, indent=2)
         print(f"Data successfully saved to {filepath}")
