@@ -1,21 +1,30 @@
 const express = require('express');
+const fs = require('fs');
 const app = express();
-const path = require('path');
+const port = 3000;
 
-// Serve static files
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(__dirname));
 
-// API endpoints to serve data
 app.get('/nodes', (req, res) => {
-    res.sendFile(path.join(__dirname, 'nodes.json'));
+    fs.readFile('../data/nodes.json', (err, data) => {
+        if (err) {
+            res.status(500).send('Error reading nodes file');
+        } else {
+            res.send(JSON.parse(data));
+        }
+    });
 });
 
 app.get('/edges', (req, res) => {
-    res.sendFile(path.join(__dirname, 'edges.json'));
+    fs.readFile('../data/edges.json', (err, data) => {
+        if (err) {
+            res.status(500).send('Error reading edges file');
+        } else {
+            res.send(JSON.parse(data));
+        }
+    });
 });
 
-// Start the server
-const port = 3000;
 app.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}`);
+    console.log(`Server is running at http://localhost:${port}`);
 });
