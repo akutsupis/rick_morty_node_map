@@ -104,24 +104,24 @@ fetch('/data/network.json')
         );
 
         // Append circles for each node
-        node.append('circle')
-            .attr('r', (d) => sizeScale(d.degree))
-            .attr('fill', (d) => {
-                if (d.type === 'character') return '#69b3a2';
-                if (d.type === 'episode') return '#ff8c00';
-                if (d.type === 'location') return '#6a5acd';
-                return '#ccc';
+        node.append("circle")
+            .attr("r", (d) => sizeScale(d.degree)) // Scale radius based on degree
+            .attr("fill", (d) => {
+                if (d.type === "character") return "#69b3a2";
+                if (d.type === "episode") return "#ff8c00";
+                if (d.type === "location") return "#6a5acd";
+                return "#ccc";
             })
-            .on('click', displayMetadata); // Bind click to display metadata
+            .on("click", displayMetadata); // Bind click to display metadata
 
        // Append images for nodes (hidden by default)
-        node.append('image')
-            .attr('xlink:href', (d) => d.image || '') // Assign the image URL if available
-            .attr('width', 50) // Adjust the image size
-            .attr('height', 50)
-            .attr('x', -25) // Center the image horizontally
-            .attr('y', -25) // Center the image vertically
-            .style('display', 'none'); // Start with images hidden (controlled by togglePhotos)
+        node.append("image")
+            .attr("xlink:href", (d) => d.image || "") // Assign the image URL if available
+            .attr("width", (d) => sizeScale(d.degree) * 2) // Image width doubled to match the circle's diameter
+            .attr("height", (d) => sizeScale(d.degree) * 2) // Image height doubled to match the circle's diameter
+            .attr("x", (d) => -sizeScale(d.degree)) // Shift horizontally to center
+            .attr("y", (d) => -sizeScale(d.degree)) // Shift vertically to center
+            .style("display", "none"); // Start with images hidden, controlled by togglePhotos
 
         // Append labels below nodes
         node.append('text')
