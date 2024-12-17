@@ -98,7 +98,12 @@ fetch('/data/network.json')
             .text((d) => d.name);
 
         // Add click event listener to the node (circle or image container)
-        node.on('click', displayMetadata);
+        node.on('click', function(event, d) {
+            displayMetadata(event, d);
+            if (highlightNodeToggle.checked) {
+                rearrangeAroundNode(d);
+            }
+        });
 
         // Simulation setup for force layout, after node initialization
         const simulation = d3.forceSimulation(nodes)
@@ -209,13 +214,6 @@ fetch('/data/network.json')
                 node.style('opacity', d => (d.id === node.id || validLinks.some(l => l.source === node || l.target === node)) ? 1 : 0.3);
             }
         }
-
-        node.select('circle')
-            .on('click', (_, d) => {
-                if (highlightNodeToggle.checked) {
-                    rearrangeAroundNode(d);
-                }
-            });
 
         highlightNodeToggle.addEventListener('change', () => {
             if (!highlightNodeToggle.checked) {
