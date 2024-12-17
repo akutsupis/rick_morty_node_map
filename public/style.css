@@ -98,3 +98,20 @@ body {
     pointer-events: none;
     text-anchor: middle;
 }
+
+/* Style for highlighted links */
+line.highlighted {
+    stroke: #ff0000; /* Bright red for highlighting */
+    stroke-width: 3px;
+}
+
+/* Dimmed nodes during focus mode */
+.node.dimmed {
+    opacity: 0.3;
+}
+
+/* Highlighted nodes */
+.node.highlighted {
+    stroke: #ff0000;
+    stroke-width: 2.5px;
+}

@@ -109,6 +109,35 @@ fetch('/data/network.json')
             .on('tick', ticked);
 
         function applyFilters() {
+            const showPhotos = togglePhotos.checked; // Fetch the state of 'Show Photos' toggle
+            const showCharacters = toggleCharacters.checked;
+            const showEpisodes = toggleEpisodes.checked;
+            const showLocations = toggleLocations.checked;
+
+            // Toggle between circles and photos
+            node.each(function (d) {
+                const group = d3.select(this);
+                group.select('circle').style('display', showPhotos ? 'none' : 'block'); // Hide circles if photos are enabled
+                group.select('image').style('display', showPhotos ? 'block' : 'none'); // Show images if photos are enabled
+            });
+
+
+            // Update node visibility based on type and toggles
+            node.style('display', d => {
+                const typeVisible =
+                    (showCharacters && d.type === 'character') ||
+                    (showEpisodes && d.type === 'episode') ||
+                    (showLocations && d.type === 'location');
+                return typeVisible ? 'block' : 'none';
+            });
+
+            // Update link visibility based on node visibility
+            link.style('display', d => {
+                const sourceVisible = d3.select(nodeMap.get(d.source.id)).style('display') !== 'none';
+                const targetVisible = d3.select(nodeMap.get(d.target.id)).style('display') !== 'none';
+                return sourceVisible && targetVisible ? 'block' : 'none';
+            });
+
             const searchInput = document.getElementById('nodeSearch').value.toLowerCase();
             const typeFilter = document.getElementById('typeFilter').value;
 
@@ -168,6 +197,57 @@ fetch('/data/network.json')
             d.fx = null;
             d.fy = null;
         }
+
+
+        const highlightNodeToggle = document.getElementById('highlightNodeToggle'); // Checkbox
+        let focusedNode = null; // To keep track of the currently selected node
+
+        function rearrangeAroundNode(node) {
+            if (highlightNodeToggle.checked) {
+                focusedNode = node;
+
+                // Fix the clicked node in the center
+                simulation
+                    .alpha(0.5) // Increase alpha for smoother transition
+                    .force('center', d3.forceCenter(width / 2, height / 2))
+                    .force('charge', d3.forceManyBody().strength(-50)) // Weaken charge to focus on layout
+                    .force('link', d3.forceLink(validLinks).id(d => d.id).distance(d => {
+                        if (d.source.id === node.id || d.target.id === node.id) return 100; // Closer for direct connections
+                        return 300; // Looser for unrelated nodes
+                    }))
+                    .restart();
+
+                // Highlight the selected node and its direct connections
+                link.style('stroke', d => (d.source.id === node.id || d.target.id === node.id) ? '#ff0000' : '#aaa')
+                    .style('display', d => (d.source.id === node.id || d.target.id === node.id) ? 'block' : 'none');
+
+                node.style('opacity', d => (d.id === node.id || validLinks.some(l => l.source === node || l.target === node)) ? 1 : 0.3);
+            }
+        }
+
+        node.select('circle')
+            .on('click', (_, d) => {
+                if (highlightNodeToggle.checked) {
+                    rearrangeAroundNode(d);
+                }
+            });
+
+        highlightNodeToggle.addEventListener('change', () => {
+            if (!highlightNodeToggle.checked) {
+                // Reset the graph layout and styles
+                focusedNode = null;
+
+                simulation
+                    .alpha(0.5)
+                    .force('center', d3.forceCenter(width / 2, height / 2))
+                    .force('charge', d3.forceManyBody().strength(-200))
+                    .force('link', d3.forceLink(validLinks).id(d => d.id).distance(150))
+                    .restart();
+
+                link.style('stroke', '#aaa').style('display', 'block');
+                node.style('opacity', 1);
+            }
+        });
 
         function displayMetadata(event, d) {
             console.log("Clicked on node:", d);
