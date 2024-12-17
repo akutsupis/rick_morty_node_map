@@ -80,8 +80,7 @@ fetch('/data/network.json')
                 if (d.type === "episode") return "#ff8c00";
                 if (d.type === "location") return "#6a5acd";
                 return "#ccc";
-            })
-            .on("click", displayMetadata); // Attach displayMetadata here
+            });
 
         // Append images for nodes (hidden by default)
         node.append("image")
@@ -90,14 +89,16 @@ fetch('/data/network.json')
             .attr("height", (d) => sizeScale(d.degree) * 2)
             .attr("x", (d) => -sizeScale(d.degree))
             .attr("y", (d) => -sizeScale(d.degree))
-            .style("display", "none")
-            .on("click", displayMetadata); // Attach displayMetadata here
+            .style("display", "none");
 
         // Append labels below nodes
         node.append('text')
             .attr('dy', (d) => sizeScale(d.degree) + 5)
             .attr('text-anchor', 'middle')
             .text((d) => d.name);
+
+        // Add click event listener to the node (circle or image container)
+        node.on('click', displayMetadata);
 
         // Simulation setup for force layout, after node initialization
         const simulation = d3.forceSimulation(nodes)
