@@ -10,6 +10,18 @@ body {
     border: 1px solid #ccc;
 }
 
+#tooltip {
+    position: absolute;
+    text-align: left;
+    padding: 10px;
+    background: #f4f4f4;
+    border: 1px solid #000;
+    border-radius: 4px;
+    pointer-events: none;
+    font-size: 12px;
+    opacity: 0;
+}
+
 .node circle {
     fill: #69b3a2;
     stroke: #333;
