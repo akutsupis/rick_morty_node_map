@@ -7,13 +7,10 @@ fetch('/data/network.json')
 
         console.log("Total nodes loaded:", nodes.length);
 
-        const rickSanchezNodes = nodes.filter(node => node.name === "Rick Sanchez");
-        console.log("Total Rick Sanchez nodes found:", rickSanchezNodes.length);
-        console.log("Rick Sanchez nodes:", rickSanchezNodes);
-
         const width = window.innerWidth * 0.9;
         const height = window.innerHeight * 0.7;
 
+        // Dom elements for toggles and search
         const togglePhotos = document.getElementById('togglePhotos');
         const toggleCharacters = document.getElementById('toggleCharacters');
         const toggleEpisodes = document.getElementById('toggleEpisodes');
@@ -25,6 +22,7 @@ fetch('/data/network.json')
         // Validate links
         const validLinks = links.filter(link => nodeMap.has(link.source) && nodeMap.has(link.target));
 
+        // Calculate node degrees and setup size scale
         const degreeMap = {};
         validLinks.forEach((link) => {
             degreeMap[link.source] = (degreeMap[link.source] || 0) + 1;
@@ -83,7 +81,7 @@ fetch('/data/network.json')
                 if (d.type === "location") return "#6a5acd";
                 return "#ccc";
             })
-            .on("click", displayMetadata);
+            .on("click", displayMetadata); // Attach displayMetadata here
 
         // Append images for nodes (hidden by default)
         node.append("image")
@@ -93,7 +91,7 @@ fetch('/data/network.json')
             .attr("x", (d) => -sizeScale(d.degree))
             .attr("y", (d) => -sizeScale(d.degree))
             .style("display", "none")
-            .on("click", displayMetadata);
+            .on("click", displayMetadata); // Attach displayMetadata here
 
         // Append labels below nodes
         node.append('text')
@@ -109,7 +107,7 @@ fetch('/data/network.json')
             .on('tick', ticked);
 
         function applyFilters() {
-            const showPhotos = togglePhotos.checked; // Fetch the state of 'Show Photos' toggle
+            const showPhotos = togglePhotos.checked;
             const showCharacters = toggleCharacters.checked;
             const showEpisodes = toggleEpisodes.checked;
             const showLocations = toggleLocations.checked;
@@ -117,43 +115,31 @@ fetch('/data/network.json')
             // Toggle between circles and photos
             node.each(function (d) {
                 const group = d3.select(this);
-                group.select('circle').style('display', showPhotos ? 'none' : 'block'); // Hide circles if photos are enabled
-                group.select('image').style('display', showPhotos ? 'block' : 'none'); // Show images if photos are enabled
+                group.select('circle').style('display', showPhotos ? 'none' : 'block');
+                group.select('image').style('display', showPhotos ? 'block' : 'none');
             });
 
+            // Update visibility based on toggles and search
+            const searchInput = document.getElementById('nodeSearch').value.toLowerCase();
+            const typeFilter = document.getElementById('typeFilter').value;
 
-            // Update node visibility based on type and toggles
-            node.style('display', d => {
+            node.style('display', function (d) {
+                const matchesSearch = d.name.toLowerCase().includes(searchInput);
                 const typeVisible =
                     (showCharacters && d.type === 'character') ||
                     (showEpisodes && d.type === 'episode') ||
                     (showLocations && d.type === 'location');
-                return typeVisible ? 'block' : 'none';
+
+                const matchesType = typeFilter === 'all' || d.type === typeFilter;
+                return matchesSearch && typeVisible && matchesType ? 'block' : 'none';
             });
 
             // Update link visibility based on node visibility
             link.style('display', d => {
-                const sourceVisible = d3.select(nodeMap.get(d.source.id)).style('display') !== 'none';
-                const targetVisible = d3.select(nodeMap.get(d.target.id)).style('display') !== 'none';
+                const sourceVisible = d3.select(`g[id="${d.source.id}"]`).style('display') !== 'none';
+                const targetVisible = d3.select(`g[id="${d.target.id}"]`).style('display') !== 'none';
                 return sourceVisible && targetVisible ? 'block' : 'none';
             });
-
-            const searchInput = document.getElementById('nodeSearch').value.toLowerCase();
-            const typeFilter = document.getElementById('typeFilter').value;
-
-            node.style('display', d => {
-                const matchesSearch = d.name.toLowerCase().includes(searchInput);
-                const matchesType = typeFilter === 'all' || d.type === typeFilter;
-
-                // If both filters match, show the node
-                return matchesSearch && matchesType ? 'block' : 'none';
-            });
-
-            // Adjust link visibility to include only connections between visible nodes
-            link.style('display', d =>
-                nodeMap.get(d.source.id).style.display !== 'none' &&
-                nodeMap.get(d.target.id).style.display !== 'none' ? 'block' : 'none'
-            );
         }
 
         // Add event listeners for dynamic filtering
@@ -198,9 +184,8 @@ fetch('/data/network.json')
             d.fy = null;
         }
 
-
         const highlightNodeToggle = document.getElementById('highlightNodeToggle'); // Checkbox
-        let focusedNode = null; // To keep track of the currently selected node
+        let focusedNode = null;
 
         function rearrangeAroundNode(node) {
             if (highlightNodeToggle.checked) {
@@ -208,16 +193,15 @@ fetch('/data/network.json')
 
                 // Fix the clicked node in the center
                 simulation
-                    .alpha(0.5) // Increase alpha for smoother transition
+                    .alpha(0.5)
                     .force('center', d3.forceCenter(width / 2, height / 2))
-                    .force('charge', d3.forceManyBody().strength(-50)) // Weaken charge to focus on layout
+                    .force('charge', d3.forceManyBody().strength(-50))
                     .force('link', d3.forceLink(validLinks).id(d => d.id).distance(d => {
-                        if (d.source.id === node.id || d.target.id === node.id) return 100; // Closer for direct connections
-                        return 300; // Looser for unrelated nodes
+                        if (d.source.id === node.id || d.target.id === node.id) return 100;
+                        return 300;
                     }))
                     .restart();
 
-                // Highlight the selected node and its direct connections
                 link.style('stroke', d => (d.source.id === node.id || d.target.id === node.id) ? '#ff0000' : '#aaa')
                     .style('display', d => (d.source.id === node.id || d.target.id === node.id) ? 'block' : 'none');
 
@@ -234,7 +218,6 @@ fetch('/data/network.json')
 
         highlightNodeToggle.addEventListener('change', () => {
             if (!highlightNodeToggle.checked) {
-                // Reset the graph layout and styles
                 focusedNode = null;
 
                 simulation
