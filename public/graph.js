@@ -37,7 +37,7 @@ fetch('/data/network.json')
             .attr('height', height)
             .call(
                 d3.zoom()
-                    .scaleExtent([0.5, 3]) // Zoom limits
+                    .scaleExtent([0.5, 5]) // Zoom limits
                     .on('zoom', (event) => g.attr('transform', event.transform))
             )
             .append('g');
@@ -117,11 +117,12 @@ fetch('/data/network.json')
        // Append images for nodes (hidden by default)
         node.append("image")
             .attr("xlink:href", (d) => d.image || "") // Assign the image URL if available
-            .attr("width", (d) => sizeScale(d.degree) * 2) // Image width doubled to match the circle's diameter
-            .attr("height", (d) => sizeScale(d.degree) * 2) // Image height doubled to match the circle's diameter
-            .attr("x", (d) => -sizeScale(d.degree)) // Shift horizontally to center
-            .attr("y", (d) => -sizeScale(d.degree)) // Shift vertically to center
-            .style("display", "none"); // Start with images hidden, controlled by togglePhotos
+            .attr("width", (d) => sizeScale(d.degree) * 2) // Image width
+            .attr("height", (d) => sizeScale(d.degree) * 2) // Image height
+            .attr("x", (d) => -sizeScale(d.degree)) // Center horizontally
+            .attr("y", (d) => -sizeScale(d.degree)) // Center vertically
+            .style("display", "none") // Start with images hidden, controlled by togglePhotos
+            .on("click", displayMetadata); // Add click event to display tooltip
 
         // Append labels below nodes
         node.append('text')
@@ -199,29 +200,6 @@ fetch('/data/network.json')
             metadataHTML += `<p>Connections: ${connections}</p>`;
             metadataDiv.innerHTML = metadataHTML;
         }
-
-        // Add search functionality
-        const searchInput = document.getElementById('search');
-        searchInput.addEventListener('input', function () {
-            const query = this.value.toLowerCase();
-            const matchingNode = nodes.find(node => node.name.toLowerCase().includes(query));
-
-            if (matchingNode) {
-                // Calculate zoom transform to center the node
-                const transform = d3.zoomIdentity
-                    .translate(width / 2 - matchingNode.x * 2, height / 2 - matchingNode.y * 2)
-                    .scale(2);
-
-                svg.transition()
-                    .duration(750)
-                    .call(d3.zoom().transform, transform);
-
-                // Highlight the matching node
-                g.selectAll('circle')
-                    .attr('stroke', d => (d.id === matchingNode.id ? '#ff0000' : null))
-                    .attr('stroke-width', d => (d.id === matchingNode.id ? 3 : null));
-            }
-        });
 
     })
     .catch((err) => console.error('Error loading data:', err));
