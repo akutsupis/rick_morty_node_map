@@ -47,6 +47,40 @@ body {
     align-items: center;
 }
 
+#search-container {
+    display: flex;
+    justify-content: center;
+    margin: 10px 0;
+}
+
+#nodeSearch {
+    padding: 6px 10px;
+    width: 200px;
+    margin-right: 10px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+#typeFilter {
+    padding: 6px 10px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    margin-right: 10px;
+}
+
+#resetFilters {
+    padding: 6px 10px;
+    background-color: #333;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#resetFilters:hover {
+    background-color: #555;
+}
+
 .tooltip-image {
     max-width: 100px;
     border-radius: 5px;

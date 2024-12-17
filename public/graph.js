@@ -109,27 +109,32 @@ fetch('/data/network.json')
             .on('tick', ticked);
 
         function applyFilters() {
-            node.style('display', (d) => {
-                const display = (d.type === 'character' && !toggleCharacters.checked) ||
-                    (d.type === 'episode' && !toggleEpisodes.checked) ||
-                    (d.type === 'location' && !toggleLocations.checked) ? 'none' : 'block';
-                console.log(`Node ${d.id} (${d.name}): ${display}`);
-                return display;
+            const searchInput = document.getElementById('nodeSearch').value.toLowerCase();
+            const typeFilter = document.getElementById('typeFilter').value;
+
+            node.style('display', d => {
+                const matchesSearch = d.name.toLowerCase().includes(searchInput);
+                const matchesType = typeFilter === 'all' || d.type === typeFilter;
+
+                // If both filters match, show the node
+                return matchesSearch && matchesType ? 'block' : 'none';
             });
 
-            const nodeIdsAfter = node.filter(function () {
-                return this.style.display !== 'none';
-            }).data().map(node => node.id);
-
-            const nodeIdsBefore = nodes.map(node => node.id);
-            const missingNodeIds = nodeIdsBefore.filter(id => !nodeIdsAfter.includes(id));
-            if (missingNodeIds.length > 0) {
-                console.log("Missing nodes:", missingNodeIds.map(id => nodes.find(node => node.id === id)));
-            }
-
-            node.select('circle').style('display', togglePhotos.checked ? 'none' : 'block');
-            node.select('image').style('display', togglePhotos.checked ? 'block' : 'none');
+            // Adjust link visibility to include only connections between visible nodes
+            link.style('display', d =>
+                nodeMap.get(d.source.id).style.display !== 'none' &&
+                nodeMap.get(d.target.id).style.display !== 'none' ? 'block' : 'none'
+            );
         }
+
+        // Add event listeners for dynamic filtering
+        document.getElementById('nodeSearch').addEventListener('input', applyFilters);
+        document.getElementById('typeFilter').addEventListener('change', applyFilters);
+        document.getElementById('resetFilters').addEventListener('click', () => {
+            document.getElementById('nodeSearch').value = '';
+            document.getElementById('typeFilter').value = 'all';
+            applyFilters();
+        });
 
         [togglePhotos, toggleCharacters, toggleEpisodes, toggleLocations].forEach((toggle) =>
             toggle.addEventListener('change', applyFilters)

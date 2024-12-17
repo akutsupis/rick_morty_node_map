@@ -24,6 +24,17 @@
                 <input type="checkbox" id="toggleLocations" checked> Show Locations
             </label>
         </div>
+        <div id="search-container">
+            <input type="text" id="nodeSearch" placeholder="Search for nodes..." />
+            <select id="typeFilter">
+                <option value="all">All Types</option>
+                <option value="character">Characters</option>
+                <option value="episode">Episodes</option>
+                <option value="location">Locations</option>
+            </select>
+            <button id="resetFilters">Reset</button>
+        </div>
+    </div>
     </div>
     <div id="graph"></div>
     <div id="tooltip"></div>
