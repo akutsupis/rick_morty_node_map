@@ -8,6 +8,12 @@ fetch('/data/network.json')
         const width = window.innerWidth * 0.9; // Adjust to fit the screen
         const height = window.innerHeight * 0.7;
 
+        // Toggles for adjusting graph display
+        const togglePhotos = document.getElementById('togglePhotos');
+        const toggleCharacters = document.getElementById('toggleCharacters');
+        const toggleEpisodes = document.getElementById('toggleEpisodes');
+        const toggleLocations = document.getElementById('toggleLocations');
+
         // Calculate degree (number of edges connected) for each node
         const degreeMap = {};
         links.forEach((link) => {
@@ -73,6 +79,30 @@ fetch('/data/network.json')
                     .on('end', dragended)
             );
 
+        // Apply filters based on the active toggles
+        function applyFilters() {
+            // Update visibility of nodes based on toggles
+            node.style('display', (d) => {
+                if (
+                    (d.type === 'character' && !toggleCharacters.checked) ||
+                    (d.type === 'episode' && !toggleEpisodes.checked) ||
+                    (d.type === 'location' && !toggleLocations.checked)
+                ) {
+                    return 'none'; // Hide nodes of this type
+                }
+                return 'block'; // Show nodes of this type
+            });
+
+            // Update nodes to show photos or circles based on the "Show Photos" toggle
+            node.select('circle').style('display', togglePhotos.checked ? 'none' : 'block'); // Hide circles if photos are enabled
+            node.select('image').style('display', togglePhotos.checked ? 'block' : 'none'); // Show photos if enabled
+        }
+
+        // Add event listeners for all toggles
+        [togglePhotos, toggleCharacters, toggleEpisodes, toggleLocations].forEach((toggle) =>
+            toggle.addEventListener('change', applyFilters)
+        );
+
         // Append circles for each node
         node.append('circle')
             .attr('r', (d) => sizeScale(d.degree))
@@ -82,7 +112,16 @@ fetch('/data/network.json')
                 if (d.type === 'location') return '#6a5acd';
                 return '#ccc';
             })
-            .on("click", displayMetadata); // Bind click to display metadata
+            .on('click', displayMetadata); // Bind click to display metadata
+
+       // Append images for nodes (hidden by default)
+        node.append('image')
+            .attr('xlink:href', (d) => d.image || '') // Assign the image URL if available
+            .attr('width', 50) // Adjust the image size
+            .attr('height', 50)
+            .attr('x', -25) // Center the image horizontally
+            .attr('y', -25) // Center the image vertically
+            .style('display', 'none'); // Start with images hidden (controlled by togglePhotos)
 
         // Append labels below nodes
         node.append('text')
