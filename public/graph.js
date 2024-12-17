@@ -1,93 +1,110 @@
 // Fetch API data and initialize the graph
 fetch('/data/network.json')
-    .then(response => response.json())
-    .then(data => {
+    .then((response) => response.json())
+    .then((data) => {
         const nodes = data.nodes;
         const links = data.edges;
 
-        const width = window.innerWidth - 20, height = window.innerHeight - 100;
+        const width = window.innerWidth * 0.9; // Adjust to fit the screen
+        const height = window.innerHeight * 0.7;
 
-        // Add SVG element with zoom and pan capabilities
-        const svg = d3.select('#graph')
+        // Calculate degree (number of edges connected) for each node
+        const degreeMap = {};
+        links.forEach((link) => {
+            degreeMap[link.source] = (degreeMap[link.source] || 0) + 1;
+            degreeMap[link.target] = (degreeMap[link.target] || 0) + 1;
+        });
+        nodes.forEach((node) => {
+            node.degree = degreeMap[node.id] || 0;
+        });
+
+        // Define a size scale for node bubbles
+        const sizeScale = d3
+            .scaleSqrt()
+            .domain([0, d3.max(nodes, (d) => d.degree)])
+            .range([5, 70]);
+
+        const svg = d3
+            .select('#graph')
             .append('svg')
             .attr('width', width)
             .attr('height', height)
-            .call(d3.zoom()
-                .scaleExtent([0.5, 5]) // Allow zoom between 50% and 500%
-                .on('zoom', (event) => {
-                    g.attr('transform', event.transform);
-                }))
-            .append('g'); // Group to hold all graph elements
+            .call(
+                d3.zoom()
+                    .scaleExtent([0.5, 3]) // Zoom limits
+                    .on('zoom', (event) => g.attr('transform', event.transform))
+            )
+            .append('g');
 
-        const g = svg.append('g');
-
-        // Force simulation setup
-        const simulation = d3.forceSimulation(nodes)
-            .force('link', d3.forceLink(links).id(d => d.id).distance(150))
-            .force('charge', d3.forceManyBody().strength(-500))
+        // Simulation setup for force layout
+        const simulation = d3
+            .forceSimulation(nodes)
+            .force(
+                'link',
+                d3.forceLink(links).id((d) => d.id).distance(150)
+            )
+            .force('charge', d3.forceManyBody().strength(-200))
             .force('center', d3.forceCenter(width / 2, height / 2))
             .on('tick', ticked);
 
-        // Draw links
-        const link = g.append('g')
-            .attr('class', 'links')
+        const g = svg.append('g');
+
+        // Add links
+        const link = g
+            .append('g')
             .selectAll('line')
             .data(links)
             .enter()
             .append('line')
-            .attr('stroke-width', 1.5)
-            .attr('stroke', '#999')
-            .attr('stroke-opacity', 0.6);
+            .attr('stroke-width', 2)
+            .attr('stroke', '#aaa');
 
-        // Draw nodes
-        const node = g.append('g')
-            .attr('class', 'nodes')
+        // Add nodes
+        const node = g
             .selectAll('g')
             .data(nodes)
             .enter()
             .append('g')
-            .call(d3.drag()
-                .on('start', dragstarted)
-                .on('drag', dragged)
-                .on('end', dragended));
+            .call(
+                d3
+                    .drag()
+                    .on('start', dragstarted)
+                    .on('drag', dragged)
+                    .on('end', dragended)
+            );
 
-        // Add circles or photos based on settings
-        const circle = node.append('circle')
-            .attr('r', 10)
-            .attr('fill', d => {
+        // Append circles for each node
+        node.append('circle')
+            .attr('r', (d) => sizeScale(d.degree))
+            .attr('fill', (d) => {
                 if (d.type === 'character') return '#69b3a2';
                 if (d.type === 'episode') return '#ff8c00';
                 if (d.type === 'location') return '#6a5acd';
                 return '#ccc';
-            });
+            })
+            .on("click", displayMetadata); // Bind click to display metadata
 
-        const photo = node.append('image')
-            .attr('xlink:href', d => d.image || '')
-            .attr('width', 30)
-            .attr('height', 30)
-            .attr('x', -15)
-            .attr('y', -15)
-            .style('display', 'none'); // Initially hidden
-
-        // Add labels
+        // Append labels below nodes
         node.append('text')
-            .attr('dy', 20)
+            .attr('dy', (d) => sizeScale(d.degree) + 5)
             .attr('text-anchor', 'middle')
-            .style('font-size', '10px')
-            .text(d => d.name);
+            .text((d) => d.name);
 
-        // Tick event
+        // Tick handler for simulation
         function ticked() {
             link
-                .attr('x1', d => d.source.x)
-                .attr('y1', d => d.source.y)
-                .attr('x2', d => d.target.x)
-                .attr('y2', d => d.target.y);
+                .attr('x1', (d) => d.source.x)
+                .attr('y1', (d) => d.source.y)
+                .attr('x2', (d) => d.target.x)
+                .attr('y2', (d) => d.target.y);
 
-            node.attr('transform', d => `translate(${d.x},${d.y})`);
+            node.attr(
+                'transform',
+                (d) => `translate(${d.x},${d.y})`
+            );
         }
 
-        // Dragging behavior
+        // Drag behavior functions
         function dragstarted(event, d) {
             if (!event.active) simulation.alphaTarget(0.3).restart();
             d.fx = d.x;
@@ -105,37 +122,67 @@ fetch('/data/network.json')
             d.fy = null;
         }
 
-        // Handle settings toggles
-        document.getElementById('togglePhotos').addEventListener('change', function () {
-            const display = this.checked ? 'block' : 'none';
-            photo.style('display', display);
-            circle.style('display', this.checked ? 'none' : 'block');
-        });
+        // Display metadata for the selected node
+        function displayMetadata(event, d) {
+            const metadataDiv = document.getElementById("tooltip");
 
-        document.getElementById('nodeSize').addEventListener('input', function () {
-            const size = this.value;
-            circle.attr('r', size / 2);
-            photo.attr('width', size)
-                .attr('height', size)
-                .attr('x', -size / 2)
-                .attr('y', -size / 2);
-        });
+            const connections = links.reduce((count, link) => {
+                return count + ((link.source.id === d.id || link.target.id === d.id) ? 1 : 0);
+            }, 0);
 
-        // Filtering nodes by type
-        function toggleType(type, show) {
-            node.style('display', d => (d.type === type && !show) ? 'none' : 'block');
+            let metadataHTML = `<h3>${d.name}</h3>`;
+
+            if (d.image) {
+                metadataHTML += `<img src="${d.image}" alt="${d.name} photo" class="tooltip-image"/>`;
+            }
+
+            if (d.type === "character") {
+                metadataHTML += `
+                    <p>Type: ${d.type}</p>
+                    ${d.species ? `<p>Species: ${d.species}</p>` : ''}
+                    ${d.status ? `<p>Status: ${d.status}</p>` : ''}
+                    ${d.gender ? `<p>Gender: ${d.gender}</p>` : ''}
+                    ${d.origin ? `<p>Origin: ${d.origin}</p>` : ''}
+                `;
+            } else if (d.type === "location") {
+                metadataHTML += `
+                    <p>Type: ${d.type}</p>
+                    ${d.dimension ? `<p>Dimension: ${d.dimension}</p>` : ''}
+                    ${d.location_type ? `<p>Location Type: ${d.location_type}</p>` : ''}
+                `;
+            } else if (d.type === "episode") {
+                metadataHTML += `
+                    <p>Type: ${d.type}</p>
+                    ${d.air_date ? `<p>Air Date: ${d.air_date}</p>` : ''}
+                `;
+            }
+
+            metadataHTML += `<p>Connections: ${connections}</p>`;
+            metadataDiv.innerHTML = metadataHTML;
         }
 
-        document.getElementById('toggleCharacters').addEventListener('change', function () {
-            toggleType('character', this.checked);
+        // Add search functionality
+        const searchInput = document.getElementById('search');
+        searchInput.addEventListener('input', function () {
+            const query = this.value.toLowerCase();
+            const matchingNode = nodes.find(node => node.name.toLowerCase().includes(query));
+
+            if (matchingNode) {
+                // Calculate zoom transform to center the node
+                const transform = d3.zoomIdentity
+                    .translate(width / 2 - matchingNode.x * 2, height / 2 - matchingNode.y * 2)
+                    .scale(2);
+
+                svg.transition()
+                    .duration(750)
+                    .call(d3.zoom().transform, transform);
+
+                // Highlight the matching node
+                g.selectAll('circle')
+                    .attr('stroke', d => (d.id === matchingNode.id ? '#ff0000' : null))
+                    .attr('stroke-width', d => (d.id === matchingNode.id ? 3 : null));
+            }
         });
 
-        document.getElementById('toggleEpisodes').addEventListener('change', function () {
-            toggleType('episode', this.checked);
-        });
-
-        document.getElementById('toggleLocations').addEventListener('change', function () {
-            toggleType('location', this.checked);
-        });
     })
-    .catch(err => console.error('Error loading data:', err));
+    .catch((err) => console.error('Error loading data:', err));

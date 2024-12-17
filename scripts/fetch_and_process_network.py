@@ -51,7 +51,8 @@ def build_network(characters, episodes, locations):
             "id": episode_id,
             "type": "episode",
             "name": ep["name"],
-            "air_date": ep["air_date"]
+            "air_date": ep["air_date"],
+            "episode": ep["episode"]
         })
 
         # Connect each character to the episode
