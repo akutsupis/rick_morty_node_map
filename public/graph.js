@@ -1,26 +1,35 @@
-// Fetch API data and create a D3 graph
-fetch('/data/network.json') // Adjusted to load network.json
+// Fetch API data and initialize the graph
+fetch('/data/network.json')
     .then(response => response.json())
     .then(data => {
         const nodes = data.nodes;
         const links = data.edges;
 
-        // Setup SVG canvas
-        const width = 1000, height = 600;
+        const width = window.innerWidth - 20, height = window.innerHeight - 100;
+
+        // Add SVG element with zoom and pan capabilities
         const svg = d3.select('#graph')
             .append('svg')
             .attr('width', width)
-            .attr('height', height);
+            .attr('height', height)
+            .call(d3.zoom()
+                .scaleExtent([0.5, 5]) // Allow zoom between 50% and 500%
+                .on('zoom', (event) => {
+                    g.attr('transform', event.transform);
+                }))
+            .append('g'); // Group to hold all graph elements
+
+        const g = svg.append('g');
 
         // Force simulation setup
         const simulation = d3.forceSimulation(nodes)
-            .force('link', d3.forceLink(links).id(d => d.id).distance(100))
-            .force('charge', d3.forceManyBody().strength(-300))
+            .force('link', d3.forceLink(links).id(d => d.id).distance(150))
+            .force('charge', d3.forceManyBody().strength(-500))
             .force('center', d3.forceCenter(width / 2, height / 2))
             .on('tick', ticked);
 
-        // Draw links (edges)
-        const link = svg.append('g')
+        // Draw links
+        const link = g.append('g')
             .attr('class', 'links')
             .selectAll('line')
             .data(links)
@@ -31,7 +40,7 @@ fetch('/data/network.json') // Adjusted to load network.json
             .attr('stroke-opacity', 0.6);
 
         // Draw nodes
-        const node = svg.append('g')
+        const node = g.append('g')
             .attr('class', 'nodes')
             .selectAll('g')
             .data(nodes)
@@ -42,42 +51,32 @@ fetch('/data/network.json') // Adjusted to load network.json
                 .on('drag', dragged)
                 .on('end', dragended));
 
-        // Add circles to represent nodes
-        node.append('circle')
+        // Add circles or photos based on settings
+        const circle = node.append('circle')
             .attr('r', 10)
             .attr('fill', d => {
-                // Colors for different types of nodes
-                if (d.type === 'character') return '#69b3a2'; // Green for characters
-                if (d.type === 'episode') return '#ff8c00';   // Orange for episodes
-                if (d.type === 'location') return '#6a5acd'; // Purple for locations
-                return '#ccc'; // Default color
-            })
-            .on('click', d => {
-                updateSidebar(d); // Update sidebar on click
-                highlightConnectedEdges(d); // Highlight connections on click
-            })
-            .on('mouseover', d => {
-                // Tooltip on hover
-                d3.select('#tooltip')
-                    .style('opacity', 1)
-                    .html(`<strong>${d.name}</strong><br>Type: ${d.type}`)
-                    .style('left', (d3.event.pageX + 10) + 'px')
-                    .style('top', (d3.event.pageY + 10) + 'px');
-            })
-            .on('mouseout', () => {
-                d3.select('#tooltip')
-                    .style('opacity', 0);
+                if (d.type === 'character') return '#69b3a2';
+                if (d.type === 'episode') return '#ff8c00';
+                if (d.type === 'location') return '#6a5acd';
+                return '#ccc';
             });
 
-        // Add labels to nodes
-        node.append('text')
-            .attr('dy', 15)
-            .attr('dx', -10)
-            .text(d => d.name)
-            .style('font-size', 10)
-            .style('text-anchor', 'start');
+        const photo = node.append('image')
+            .attr('xlink:href', d => d.image || '')
+            .attr('width', 30)
+            .attr('height', 30)
+            .attr('x', -15)
+            .attr('y', -15)
+            .style('display', 'none'); // Initially hidden
 
-        // Tick event: Update position of nodes and links
+        // Add labels
+        node.append('text')
+            .attr('dy', 20)
+            .attr('text-anchor', 'middle')
+            .style('font-size', '10px')
+            .text(d => d.name);
+
+        // Tick event
         function ticked() {
             link
                 .attr('x1', d => d.source.x)
@@ -106,53 +105,37 @@ fetch('/data/network.json') // Adjusted to load network.json
             d.fy = null;
         }
 
-        // Highlight connections for the selected node
-        function highlightConnectedEdges(node) {
-            // Highlight edges
-            link
-                .attr('stroke', d =>
-                    d.source.id === node.id || d.target.id === node.id ? 'red' : '#999'
-                )
-                .attr('stroke-opacity', d =>
-                    d.source.id === node.id || d.target.id === node.id ? 1 : 0.6
-                );
+        // Handle settings toggles
+        document.getElementById('togglePhotos').addEventListener('change', function () {
+            const display = this.checked ? 'block' : 'none';
+            photo.style('display', display);
+            circle.style('display', this.checked ? 'none' : 'block');
+        });
 
-            // Highlight connected nodes
-            svg.selectAll('circle')
-                .attr('stroke', d =>
-                    links.some(e => e.source.id === d.id && e.target.id === node.id) ? 'red' : 'none'
-                );
+        document.getElementById('nodeSize').addEventListener('input', function () {
+            const size = this.value;
+            circle.attr('r', size / 2);
+            photo.attr('width', size)
+                .attr('height', size)
+                .attr('x', -size / 2)
+                .attr('y', -size / 2);
+        });
+
+        // Filtering nodes by type
+        function toggleType(type, show) {
+            node.style('display', d => (d.type === type && !show) ? 'none' : 'block');
         }
 
-        // Update sidebar details
-        function updateSidebar(node) {
-            const sidebar = d3.select('#details');
-            sidebar.html(''); // Clear current content
+        document.getElementById('toggleCharacters').addEventListener('change', function () {
+            toggleType('character', this.checked);
+        });
 
-            // Render node-specific information
-            if (node.type === 'character') {
-                sidebar.html(`
-                    <h2>${node.name}</h2>
-                    <img src="${node.image}" alt="${node.name}" width="100">
-                    <p><strong>Type:</strong> ${node.type}</p>
-                    <p><strong>Species:</strong> ${node.species}</p>
-                    <p><strong>Status:</strong> ${node.status}</p>
-                    <p><strong>Gender:</strong> ${node.gender}</p>
-                    <p><strong>Origin:</strong> ${node.origin}</p>
-                `);
-            } else if (node.type === 'episode') {
-                sidebar.html(`
-                    <h2>${node.name}</h2>
-                    <p><strong>Type:</strong> ${node.type}</p>
-                    <p><strong>Air Date:</strong> ${node.air_date}</p>
-                `);
-            } else if (node.type === 'location') {
-                sidebar.html(`
-                    <h2>${node.name}</h2>
-                    <p><strong>Type:</strong> ${node.type}</p>
-                    <p><strong>Dimension:</strong> ${node.dimension}</p>
-                `);
-            }
-        }
+        document.getElementById('toggleEpisodes').addEventListener('change', function () {
+            toggleType('episode', this.checked);
+        });
+
+        document.getElementById('toggleLocations').addEventListener('change', function () {
+            toggleType('location', this.checked);
+        });
     })
     .catch(err => console.error('Error loading data:', err));

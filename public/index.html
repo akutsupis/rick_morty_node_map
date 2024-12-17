@@ -8,13 +8,31 @@
     <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
 <body>
-<h1>Rick and Morty Network Map</h1>
-<div id="graph"></div>
-<div id="details">
-    <h2>Node Details</h2>
-    <p>Click on a node to view details here.</p>
-</div>
-<div id="tooltip"></div>
-<script src="graph.js"></script>
+    <h1>Rick and Morty Network Map</h1>
+    <div id="settings">
+        <label>
+            <input type="checkbox" id="togglePhotos"> Show Photos Instead of Circles
+        </label>
+        <label>
+            <input type="checkbox" id="toggleCharacters" checked> Show Characters
+        </label>
+        <label>
+            <input type="checkbox" id="toggleEpisodes" checked> Show Episodes
+        </label>
+        <label>
+            <input type="checkbox" id="toggleLocations" checked> Show Locations
+        </label>
+        <label>
+            Node Size:
+            <input type="range" id="nodeSize" min="5" max="30" value="10">
+        </label>
+    </div>
+    <div id="graph"></div>
+    <div id="details">
+        <h2>Node Details</h2>
+        <p>Click on a node to view details here.</p>
+    </div>
+    <div id="tooltip"></div>
+    <script src="graph.js"></script>
 </body>
 </html>
