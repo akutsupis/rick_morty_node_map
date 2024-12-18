@@ -58,7 +58,7 @@ fetch('/data/network.json')
             .attr('height', height)
             .call(
                 d3.zoom()
-                    .scaleExtent([0.5, 5])
+                    .scaleExtent([0.3, 2]) // Min, Max zoom levels
                     .on('zoom', (event) => g.attr('transform', event.transform))
             )
             .append('g');
