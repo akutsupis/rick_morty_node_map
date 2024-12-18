@@ -87,6 +87,7 @@ fetch('/data/network.json')
             );
 
         console.log("Nodes after initializing:", node.size());
+        console.log("Links after initializing:", link.size());
 
         // Append circles for each node
         node.append("circle")
