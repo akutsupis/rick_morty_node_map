@@ -53,10 +53,11 @@ The graph (and its underlying `network.json` file) is organized like this:
 - Every character is connected to at least one episode and one location.
 
 ## **Setup Instructions**
-1. Install Python dependencies using `pip install -r requirements.txt`
-2. Run `python DataStructure.py` to download and create the network json files.
-2. Run `npm install` to install required Node.js dependencies.
-3. Use `node app.js` to launch the server.
-4. Open your browser and navigate to [http://localhost:3000](http://localhost:3000).
+1. Git clone https://github.com/akutsupis/rick_morty_node_map.git
+2. Install Python dependencies using `pip install -r requirements.txt`
+3. Run `python DataStructure.py` to download and create the network json files.
+4. Run `npm install` to install required Node.js dependencies.
+5. Use `node app.js` to launch the server.
+6. Open your browser and navigate to [http://localhost:3000](http://localhost:3000).
 
 > The Rick and Morty API does not require any API key for access.
