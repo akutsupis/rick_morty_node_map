@@ -9,7 +9,34 @@ if not os.path.exists(DATA_FOLDER):
 
 
 def fetch_data(endpoint):
-    """Fetch data from Rick and Morty API by endpoint ('character', 'episode', 'location')."""
+    """
+    Fetch data from the Rick and Morty API.
+
+    This function retrieves data for each endpoint ('character', 'episode', or 'location')
+    from the Rick and Morty API. It paginates through the results if necessary and combines
+    all pages into a single list.
+
+    Parameters
+    ----------
+    endpoint : str
+        The specific API endpoint to fetch data from.
+
+    Returns
+    -------
+    list
+        A list of dictionaries containing the combined results fetched from the API across all pages.
+
+    Raises
+    ------
+    Exception
+        If the API returns a status code other than 200, an error is raised with details about the endpoint.
+
+    Notes
+    -----
+    - Results are fetched in batches, based on the pagination information provided in each response.
+    - Each page's data is appended to the `results` list, which is returned as the final output.
+    """
+
     results = []
     url = f"https://rickandmortyapi.com/api/{endpoint}"
 
@@ -26,7 +53,38 @@ def fetch_data(endpoint):
 
 
 def build_network(characters, episodes, locations):
-    """Build a graph structure with nodes for characters, episodes (shared appearances), and locations."""
+    """
+    Build a graph structure representing the relationships between characters, episodes, and locations.
+
+    This function constructs a graph-like network, where:
+    - `nodes` represent characters, episodes, or locations.
+    - `edges` represent relationships such as characters appearing in episodes or residing in locations.
+
+    Parameters
+    ----------
+    characters : list
+        A list of dictionaries, each containing information about a character.
+    episodes : list
+        A list of dictionaries, each containing information about an episode.
+    locations : list
+        A list of dictionaries, each containing information about a location.
+
+    Returns
+    -------
+    tuple
+        A tuple containing two elements:
+        - `nodes` (list): A list of dictionaries, each representing a node in the graph. Nodes have attributes
+          such as `id`, `name`, `type`, and additional metadata depending on the type.
+        - `edges` (list): A list of dictionaries, each representing an edge in the graph. Edges have attributes
+          such as `source`, `target`, and `type`, indicating their relationship.
+
+    Notes
+    -----
+    - Edges are generated for:
+      - Characters appearing in episodes (`type="appeared_in"`).
+      - Characters residing in locations (`type="resident_of"`).
+    """
+
     nodes = []
     edges = []
 
@@ -88,7 +146,30 @@ def build_network(characters, episodes, locations):
 
 
 def save_network(nodes, edges):
-    """Save the processed network to a JSON file."""
+    """
+    Save the generated graph structure (nodes and edges) to a JSON file.
+
+    This function writes the nodes and edges of the network graph into a JSON file
+    named "network.json" in the `data` folder. The file is written with an indentation
+    of 2 spaces for readability.
+
+    Parameters
+    ----------
+    nodes : list
+        A list of dictionaries representing the nodes in the graph.
+    edges : list
+        A list of dictionaries representing the edges in the graph.
+
+    Side Effects
+    ------------
+    - Creates a file named "network.json" in the `data` folder, saving the graph structure.
+
+    Notes
+    -----
+    - If the `data` folder does not exist, it is created automatically before saving the file.
+    - The generated JSON file contains two top-level keys: `nodes` and `edges`.
+    """
+
     network = {"nodes": nodes, "edges": edges}
     filepath = os.path.join(DATA_FOLDER, "network.json")
     with open(filepath, "w") as f:
@@ -97,6 +178,24 @@ def save_network(nodes, edges):
 
 
 if __name__ == "__main__":
+    """
+    This script fetches characters, episodes, and locations data from the Rick and Morty API. 
+    It then constructs a graph structure (nodes and edges) to represent the relationships between these entities.
+    It then saves the graph to a JSON file.
+
+    Workflow
+    --------
+    1. Fetch data using `fetch_data` for each endpoint ('character', 'episode', 'location').
+    2. Build the graph structure using `build_network`.
+    3. Save the nodes and edges to a JSON file with `save_network`.
+
+    Notes
+    -----
+    - Internet connection required
+    - The script is designed to be run as a standalone module
+    - Since this is in Python and the website is in express.js, we can't run this script in prod.
+    """
+
     print("Fetching data from API...")
     characters = fetch_data("character")
     episodes = fetch_data("episode")

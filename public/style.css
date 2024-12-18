@@ -1,3 +1,15 @@
+/*
+ * @file styles.css
+ *
+ * This stylesheet defines the layout and styling for the Rick and Morty Interactive Network Map application.
+ *
+ * The styles are primarily used to:
+ * - Style the overall layout of the page, including the main container and settings bar.
+ * - Style interactive elements like the tooltip, input fields, buttons, and node visualization.
+ * - Define styles for D3.js graph elements such as nodes, links, and labels.
+ * - Add focus/highlight effects for better interactivity and visualization.
+ */
+
 body {
     font-family: Arial, sans-serif;
     text-align: center;
